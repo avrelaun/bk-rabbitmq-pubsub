@@ -45,17 +45,29 @@ Return a new RabbitmqPubSub pubsub client.
  * `reconnectDelay` : Reconnection delay in ms after connection close (default `1000`)
  * `subscribeQueueName` : The name for the subscribeQueue, by default it's generated
 
-### {client} subscribe(channelName, function(data) {})
-Subscribe on a channel.
-`options` are :
-* `channelName` : Name of the channel to subscribe. (throw an error if undefined or null)
-* `function` : The function call when an event arrive. The function take one arg whose is the data send by the publisher.
-
 ### {client} publish(channelName, data)
 Subscribe on a channel.
 `options` are :
 * `channelName` : Name of the channel to subscribe. (throw an error if undefined or null)
 * `data` : Data send with the event for the subscribers.
+
+### {client} subscribe(channelName, listener)
+Subscribe on a channel.
+`options` are :
+* `channelName` : Name of the channel to subscribe. (throw an error if undefined or null)
+* `listener` : The function call when an event arrive. The function take one arg whose is the data send by the publisher.
+
+### {client} unsubscribe(channelName, listener)
+Unsubscribe on a channel the specific listener.
+`options` are :
+* `channelName` : Name of the channel to unsubscribe. (throw an error if undefined or null)
+* `listener` : The listner function to unsubscribe.
+
+
+### {client} unsubscribeAll(channelName)
+Remove all listener for a specific channel.
+`options` are :
+* `channelName` : Name of the channel to unsubscribe all function. (throw an error if undefined or null)
 
 ## Contributing
 
@@ -81,8 +93,8 @@ npm run coverage
 ```
 
 ### TODO
- * Add better coverage test
- * Add unsubscribe options
+ * Add better coverage test (unsubscribe, unsubscribeAll, ...)
+ * Add better support for lost connection
  * ...
 
 ## License

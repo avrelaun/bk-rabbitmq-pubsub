@@ -98,6 +98,16 @@ class RabbitmqPubSub {
 		});
 	}
 
+	_unbindSubscribeQueue (channelName){
+		return this._connection.getChannel()
+		.then((channel) => {
+			return channel.unbindQueue(this.subscribeQueueName, this.exchangeName, channelName)
+			.then(() => {
+				return channel.close();
+			});
+		});
+	}
+
 	_reBindAllSubscribe (){
 		for (const channelName of this._events.eventNames()){
 			this._bindSubscribeQueue(channelName);
@@ -126,6 +136,24 @@ class RabbitmqPubSub {
 		.then(() => {
 			return this._bindSubscribeQueue(channelName);
 		});
+	}
+
+	unsubscribeAll (channelName){
+		if (!channelName){
+			throw new Error('you need to provide a channelName');
+		}
+		this._events.removeAllListeners(channelName);
+		return this._unbindSubscribeQueue(channelName);
+	}
+
+	unsubscribe (channelName, callback){
+		if (!channelName){
+			throw new Error('you need to provide a channelName');
+		}
+		this._events.removeListener(channelName, callback);
+		if (this._events.listenerCount(channelName) === 0){
+			this._unbindSubscribeQueue(channelName);
+		}
 	}
 
 	publish (channelName, data){
