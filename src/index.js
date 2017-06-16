@@ -2,6 +2,7 @@ const uuidV4 = require('uuid/v4');
 
 const Connection = require('./connection');
 const Logger = require('./logger');
+const Event = require('./event');
 
 
 class RabbitmqPubSub {
@@ -17,7 +18,7 @@ class RabbitmqPubSub {
 			log
 		} = opts || {};
 
-		this._subscribes = [];
+		this._events = new Event();
 
 		this._url = url;
 		this._log = log || Logger({
@@ -67,11 +68,7 @@ class RabbitmqPubSub {
 								(message) => {
 									const channelName = message.fields.routingKey;
 									const data = JSON.parse(message.content.toString());
-									if (this._subscribes[channelName]){
-										for (const channelCb of this._subscribes[channelName]){
-											channelCb(data);
-										}
-									}
+									this._events.emit(channelName, data);
 								},
 								{
 									noAck: true
@@ -102,7 +99,7 @@ class RabbitmqPubSub {
 	}
 
 	_reBindAllSubscribe (){
-		for (const channelName of Object.keys(this._subscribes)){
+		for (const channelName of this._events.eventNames()){
 			this._bindSubscribeQueue(channelName);
 		}
 	}
@@ -124,13 +121,7 @@ class RabbitmqPubSub {
 		if (!channelName){
 			throw new Error('you need to provide a channelName');
 		}
-		if (this._subscribes[channelName]){
-			// already subscribe
-			this._subscribes[channelName].push(callback);
-		} else {
-			// new subscribe
-			this._subscribes[channelName] = [callback];
-		}
+		this._events.on(channelName, callback);
 		return this._createSubscribeQueueAndConsume()
 		.then(() => {
 			return this._bindSubscribeQueue(channelName);

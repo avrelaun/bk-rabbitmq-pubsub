@@ -62,20 +62,3 @@ test('test publish throw without channelName', (t) => {
 		t.fail(err);
 	}
 });
-
-test('test subscribe function', (t) => {
-	try {
-		const client = new RabbitmqPubSub();
-		const channel = 'channelTest';
-
-		t.is(client._subscribes.length, 0);
-		client.subscribe(channel, (data) => { return data; });
-		if (client._subscribes[channel]){
-			t.pass();
-		} else {
-			t.fail('no subscribe function');
-		}
-	} catch (err){
-		t.fail(err);
-	}
-});
