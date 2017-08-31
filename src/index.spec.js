@@ -62,3 +62,58 @@ test('test publish throw without channelName', (t) => {
 		t.fail(err);
 	}
 });
+
+test('test subscription ID as number', async (t) => {
+	try {
+		const client = new RabbitmqPubSub();
+		const channel = 'testSubscriptionChannel';
+
+		const subId = await client.subscribe(channel, (data) => {
+				return data;
+			});
+		if(typeof subId === 'number'){
+			t.pass();
+		}else {
+			t.fail();
+		}
+	} catch (err){
+		t.fail(err);
+	}
+});
+
+test('test differente subscription ID', async (t) => {
+	try {
+		const client = new RabbitmqPubSub();
+		const channel = 'testSubscriptionChannel2';
+
+		const subId = await client.subscribe(channel, (data) => {
+				return data;
+			});
+		const subId2 = await client.subscribe(channel, (data) => {
+				return data;
+			});
+		if(typeof subId !== subId2){
+			t.pass();
+		}else {
+			t.fail();
+		}
+	} catch (err){
+		t.fail(err);
+	}
+});
+
+test('test unSubscribe by sub ID', async (t) => {
+	try {
+		const client = new RabbitmqPubSub();
+		const channel = 'testSubscriptionChannel3';
+
+		const subId = await client.subscribe(channel, (data) => {
+				return data;
+			});
+		client.unsubscribe(subId);
+		console.log('#################',client._subscription);
+		t.pass();
+	} catch (err){
+		t.fail(err);
+	}
+});

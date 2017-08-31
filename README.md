@@ -56,6 +56,7 @@ Subscribe on a channel.
 `options` are :
 * `channelName` : Name of the channel to subscribe. (throw an error if undefined or null)
 * `listener` : The function call when an event arrive. The function take one arg whose is the data send by the publisher.
+This method return a number. This number is the subscription ID
 
 ### {client} unsubscribe(channelName, listener)
 Unsubscribe on a channel the specific listener.
@@ -63,6 +64,11 @@ Unsubscribe on a channel the specific listener.
 * `channelName` : Name of the channel to unsubscribe. (throw an error if undefined or null)
 * `listener` : The listner function to unsubscribe.
 
+
+### {client} unsubscribe(subscriptionId)
+Unsubscribe a specific subscription ID.
+`options` are :
+* `subscriptionId` : Id of the subscription.
 
 ### {client} unsubscribeAll(channelName)
 Remove all listener for a specific channel.
