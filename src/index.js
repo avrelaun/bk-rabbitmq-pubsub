@@ -20,6 +20,9 @@ class RabbitmqPubSub {
 
 		this._events = new Event();
 
+		this._subscriptionIdIncrement = 0;
+		this._subscription = {};
+
 		this._url = url;
 		this._log = log || Logger({
 			level: logLevel,
@@ -88,6 +91,10 @@ class RabbitmqPubSub {
 		}
 	}
 
+	_genSubscriptionId (){
+		return ++this._subscriptionIdIncrement;
+	}
+
 	_bindSubscribeQueue (channelName){
 		return this._connection.getChannel()
 		.then((channel) => {
@@ -134,7 +141,15 @@ class RabbitmqPubSub {
 		this._events.on(channelName, callback);
 		return this._createSubscribeQueueAndConsume()
 		.then(() => {
-			return this._bindSubscribeQueue(channelName);
+			return this._bindSubscribeQueue(channelName).then(
+				() => {
+					const subId = this._genSubscriptionId();
+					this._subscription[subId] = {
+						channelName,
+						callback
+					};
+					return subId;
+				});
 		});
 	}
 
@@ -146,13 +161,36 @@ class RabbitmqPubSub {
 		return this._unbindSubscribeQueue(channelName);
 	}
 
-	unsubscribe (channelName, callback){
+	_unsubscribe (channelName, callback){
 		if (!channelName){
 			throw new Error('you need to provide a channelName');
 		}
 		this._events.removeListener(channelName, callback);
 		if (this._events.listenerCount(channelName) === 0){
 			this._unbindSubscribeQueue(channelName);
+		}
+	}
+
+	unsubscribe (channelOrSubId, callback){
+
+		if (!channelOrSubId){
+			throw new Error('you need to provide a channelName or a subId');
+		}
+		if (typeof channelOrSubId === 'number') {
+			if (this._subscription[channelOrSubId]){
+				const {
+					channelName,
+					callback
+				} = this._subscription[channelOrSubId];
+				this._unsubscribe(channelName, callback);
+				delete this._subscription[channelOrSubId];
+			} else {
+				throw new Error('subscription not found');
+			}
+
+		} else {
+			const channelName = channelOrSubId;
+			this._unsubscribe(channelName, callback);
 		}
 	}
 

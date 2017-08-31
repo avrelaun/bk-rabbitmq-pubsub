@@ -1,6 +1,6 @@
 {
   "name": "bk-rabbitmq-pubsub",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Library for rabbitmq and use pubsub service",
   "main": "src/index.js",
   "scripts": {
@@ -40,7 +40,7 @@
   "ava": {
     "files": [
       "src/**/*.spec.js",
-	  "tests/*.js"
+      "tests/*.js"
     ],
     "source": [
       "src/**/*.js"
@@ -54,7 +54,7 @@
   "nyc": {
     "exclude": [
       "src/**/*.spec.js",
-	  "tests/*.js"
+      "tests/*.js"
     ]
   }
 }
