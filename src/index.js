@@ -94,22 +94,16 @@ class RabbitmqPubSub {
 	}
 
 	_bindSubscribeQueue (channelName){
-		return this._connection.newChannel()
+		return this._connection.getSubscribeChannel()
 			.then((channel) => {
-				return channel.bindQueue(this.subscribeQueueName, this._connection.exchangeName, channelName)
-					.then(() => {
-						return channel.close();
-					});
+				return channel.bindQueue(this.subscribeQueueName, this._connection.exchangeName, channelName);
 			});
 	}
 
 	_unbindSubscribeQueue (channelName){
-		return this._connection.newChannel()
+		return this._connection.getSubscribeChannel()
 			.then((channel) => {
-				return channel.unbindQueue(this.subscribeQueueName, this._connection.exchangeName, channelName)
-					.then(() => {
-						return channel.close();
-					});
+				return channel.unbindQueue(this.subscribeQueueName, this._connection.exchangeName, channelName);
 			});
 	}
 

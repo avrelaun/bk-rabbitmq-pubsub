@@ -41,6 +41,7 @@ class Connection extends EventEmitter {
 				.then((connection) => {
 					connection.on('close', () => {
 						this.connectionPromise = null;
+						this.getSubscribeChannelPromise = null;
 						this.log.info('Connection close');
 						this.emit('close');
 					});
@@ -82,6 +83,22 @@ class Connection extends EventEmitter {
 					return reject(err);
 				});
 		});
+	}
+
+	getSubscribeChannel () {
+		if (this.getSubscribeChannelPromise) {
+			return this.getSubscribeChannelPromise;
+		}
+
+		this.getSubscribeChannelPromise = this.newChannel((channel) => {
+			channel.on('error', (err) => {
+				this.getSubscribeChannelPromise = null;
+			});
+
+			return channel;
+		});
+
+		return this.getSubscribeChannelPromise;
 	}
 
 	createExchange () {
