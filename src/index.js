@@ -40,13 +40,11 @@ class RabbitmqPubSub {
 		this._connection.on('close', () => {
 			this._reconnect();
 		});
-		this.exchangeName = exchangeName;
 
-
-		this.subscribeQueueName = subscribeQueueName || this.exchangeName + '-subcribeQueue-'+uuidV4();
+		this.subscribeQueueName = subscribeQueueName || exchangeName + '-subcribeQueue-'+uuidV4();
 
 		this._createSubscribeQueueAndConsume();
-		this.publishChannel = this._connection.getChannel();
+		this.publishChannel = this._connection.newChannel();
 	}
 
 	_createSubscribeQueueAndConsume (){
@@ -54,38 +52,38 @@ class RabbitmqPubSub {
 			return this.createSubscribeQueuePromise;
 		} else {
 			this.createSubscribeQueuePromise = new Promise((resolve, reject) => {
-				this._connection.getChannel()
-				.then((channel) => {
-					return channel.assertQueue(
-						this.subscribeQueueName,
-						{
-							exclusive: true,
-							durable: false
-						}
-					)
-					.then(({queue}) => {
-						return channel.bindQueue(queue, this.exchangeName, 'default-pubsub')
-						.then(() => {
-							channel.consume(
-								queue,
-								(message) => {
-									const channelName = message.fields.routingKey;
-									const data = JSON.parse(message.content.toString());
-									this._events.emit(channelName, data);
-								},
-								{
-									noAck: true
-								}
-							)
-							.then(() => {
-								return resolve();
+				this._connection.newChannel()
+					.then((channel) => {
+						return channel.assertQueue(
+							this.subscribeQueueName,
+							{
+								exclusive: true,
+								durable: false
+							}
+						)
+							.then(({queue}) => {
+								return channel.bindQueue(queue, this._connection.exchangeName, 'default-pubsub')
+									.then(() => {
+										channel.consume(
+											queue,
+											(message) => {
+												const channelName = message.fields.routingKey;
+												const data = JSON.parse(message.content.toString());
+												this._events.emit(channelName, data);
+											},
+											{
+												noAck: true
+											}
+										)
+											.then(() => {
+												return resolve();
+											});
+									});
 							});
-						});
+					})
+					.catch((err) => {
+						return reject(err);
 					});
-				})
-				.catch((err) => {
-					return reject(err);
-				});
 			});
 			return this.createSubscribeQueuePromise;
 		}
@@ -96,23 +94,23 @@ class RabbitmqPubSub {
 	}
 
 	_bindSubscribeQueue (channelName){
-		return this._connection.getChannel()
-		.then((channel) => {
-			return channel.bindQueue(this.subscribeQueueName, this.exchangeName, channelName)
-			.then(() => {
-				return channel.close();
+		return this._connection.newChannel()
+			.then((channel) => {
+				return channel.bindQueue(this.subscribeQueueName, this._connection.exchangeName, channelName)
+					.then(() => {
+						return channel.close();
+					});
 			});
-		});
 	}
 
 	_unbindSubscribeQueue (channelName){
-		return this._connection.getChannel()
-		.then((channel) => {
-			return channel.unbindQueue(this.subscribeQueueName, this.exchangeName, channelName)
-			.then(() => {
-				return channel.close();
+		return this._connection.newChannel()
+			.then((channel) => {
+				return channel.unbindQueue(this.subscribeQueueName, this._connection.exchangeName, channelName)
+					.then(() => {
+						return channel.close();
+					});
 			});
-		});
 	}
 
 	_reBindAllSubscribe (){
@@ -122,16 +120,16 @@ class RabbitmqPubSub {
 	}
 
 	_reconnect (){
-		setTimeout(() => {
-			this._log.info('rabbimq disconnect. Try to reconnect');
-			// get a new channel for publish
-			this.publishChannel = this._connection.getChannel();
-			this.createSubscribeQueuePromise = null;
-			this._createSubscribeQueueAndConsume()
+
+		this._log.info('rabbimq disconnect. Try to reconnect');
+		// get a new channel for publish
+		this.publishChannel = this._connection.newChannel();
+		this.createSubscribeQueuePromise = null;
+		this._createSubscribeQueueAndConsume()
 			.then(() => {
 				return this._reBindAllSubscribe();
 			});
-		}, this.reconnectDelay);
+
 	}
 
 	subscribe (channelName, callback){
@@ -140,17 +138,17 @@ class RabbitmqPubSub {
 		}
 		this._events.on(channelName, callback);
 		return this._createSubscribeQueueAndConsume()
-		.then(() => {
-			return this._bindSubscribeQueue(channelName).then(
-				() => {
-					const subId = this._genSubscriptionId();
-					this._subscription[subId] = {
-						channelName,
-						callback
-					};
-					return subId;
-				});
-		});
+			.then(() => {
+				return this._bindSubscribeQueue(channelName).then(
+					() => {
+						const subId = this._genSubscriptionId();
+						this._subscription[subId] = {
+							channelName,
+							callback
+						};
+						return subId;
+					});
+			});
 	}
 
 	unsubscribeAll (channelName){
@@ -201,14 +199,14 @@ class RabbitmqPubSub {
 
 		return 	new Promise((resolve, reject) => {
 			return this.publishChannel
-			.then((channel) => {
-				const content = new Buffer(JSON.stringify(data));
-				channel.publish(this.exchangeName, channelName, content);
-				resolve();
-			})
-			.catch((err) => {
-				reject(err);
-			});
+				.then((channel) => {
+					const content = new Buffer(JSON.stringify(data));
+					channel.publish(this._connection.exchangeName, channelName, content);
+					resolve();
+				})
+				.catch((err) => {
+					reject(err);
+				});
 		});
 	}
 
