@@ -29,11 +29,12 @@
   "homepage": "https://github.com/Beekast/bk-rabbitmq-pubsub#readme",
   "devDependencies": {
     "ava": "0.19.1",
-    "eslint": "4.0.0",
+    "babel-eslint": "^8.2.1",
+    "eslint": "^4.16.0",
     "nyc": "11.0.2"
   },
   "dependencies": {
-    "amqplib": "0.5.1",
+    "amqplib": "^0.5.2",
     "bunyan": "1.8.10",
     "uuid": "3.0.1"
   },

@@ -7,30 +7,29 @@ const bunyan = require('bunyan');
 test('test instance with default args', (t) => {
 	try {
 		const client = new RabbitmqPubSub();
-		if (client._url === 'amqp://guest:guest@localhost:5672/'){
+		if (client._url === 'amqp://guest:guest@localhost:5672/') {
 			t.pass('ok');
 		} else {
 			t.fail('bad rabbitmq URL');
 		}
-	} catch (err){
+	} catch (err) {
 		t.fail(err);
 	}
 });
-
 
 test('test instance with custom args', (t) => {
 	try {
 		const opts = {
 			url: 'amqp://guest:guest@127.0.0.1:5672/',
-			log: bunyan.createLogger({name: 'newTest'})
+			log: bunyan.createLogger({ name: 'newTest' })
 		};
 		const client = new RabbitmqPubSub(opts);
-		if (client._url === opts.url){
+		if (client._url === opts.url) {
 			t.pass('ok');
 		} else {
 			t.fail('bad rabbitmq URL');
 		}
-	} catch (err){
+	} catch (err) {
 		t.fail(err);
 	}
 });
@@ -45,7 +44,7 @@ test('test subcribe throw without channelName', (t) => {
 				return data;
 			});
 		});
-	} catch (err){
+	} catch (err) {
 		t.fail(err);
 	}
 });
@@ -58,7 +57,7 @@ test('test publish throw without channelName', (t) => {
 		t.throws(() => {
 			client.publish(channel, {});
 		});
-	} catch (err){
+	} catch (err) {
 		t.fail(err);
 	}
 });
@@ -69,14 +68,14 @@ test('test subscription ID as number', async (t) => {
 		const channel = 'testSubscriptionChannel';
 
 		const subId = await client.subscribe(channel, (data) => {
-				return data;
-			});
-		if(typeof subId === 'number'){
+			return data;
+		});
+		if (typeof subId === 'number') {
 			t.pass();
-		}else {
+		} else {
 			t.fail();
 		}
-	} catch (err){
+	} catch (err) {
 		t.fail(err);
 	}
 });
@@ -87,17 +86,17 @@ test('test differente subscription ID', async (t) => {
 		const channel = 'testSubscriptionChannel2';
 
 		const subId = await client.subscribe(channel, (data) => {
-				return data;
-			});
+			return data;
+		});
 		const subId2 = await client.subscribe(channel, (data) => {
-				return data;
-			});
-		if(typeof subId !== subId2){
+			return data;
+		});
+		if (typeof subId !== subId2) {
 			t.pass();
-		}else {
+		} else {
 			t.fail();
 		}
-	} catch (err){
+	} catch (err) {
 		t.fail(err);
 	}
 });
@@ -108,12 +107,12 @@ test('test unSubscribe by sub ID', async (t) => {
 		const channel = 'testSubscriptionChannel3';
 
 		const subId = await client.subscribe(channel, (data) => {
-				return data;
-			});
+			return data;
+		});
 		client.unsubscribe(subId);
-		console.log('#################',client._subscription);
+		console.log('#################', client._subscription);
 		t.pass();
-	} catch (err){
+	} catch (err) {
 		t.fail(err);
 	}
 });
