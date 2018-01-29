@@ -38,6 +38,7 @@ class Connection extends EventEmitter {
 	}
 
 	connection () {
+		this.log.info('------ CONNECTION !!!!!!!!!!!!!!!!', this);
 		if (this.autoReconnect) {
 			this.on('close', this.reconnect);
 		}
