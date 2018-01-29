@@ -51,6 +51,8 @@ class Connection extends EventEmitter {
 						this.emit('close');
 					});
 					connection.on('error', (err) => {
+						this.log.error('----------------- CONNECTION ERROR DURING:');
+						connection.close();
 						this.log.error(err);
 						this.emit('error', err);
 					});
@@ -58,6 +60,7 @@ class Connection extends EventEmitter {
 					return resolve(connection);
 				})
 				.catch((err) => {
+					this.log.error('------------------------- CONNECTION ERROR:');
 					this.log.error(err);
 					if (this.autoReconnect) {
 						return setTimeout(() => {
