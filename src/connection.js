@@ -34,6 +34,7 @@ class Connection extends EventEmitter {
 
 	reconnect () {
 		this.log.info('try to reconnect');
+		this.connectionPromise = null;
 		this.connectionPromise = this.connection();
 	}
 
