@@ -25,8 +25,6 @@ class Connection extends EventEmitter {
 		this.log = log;
 		this.url = url;
 
-		this.replyQueue = 'amq.rabbitmq.reply-to';
-
 		if (autoCreateExchange) {
 			this.createExchange();
 		}
