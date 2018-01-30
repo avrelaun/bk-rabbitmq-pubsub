@@ -8,6 +8,7 @@ This is a very opinionated abstraction over amqplib to help simplify the impleme
  * Publish event on a channel with data
  * Subscribe event from a channel and receive data
  * Attempt to gracefully handle lost connections and channels
+ * Connections have a backoff policy of exponential delay randomized: ~1s, ~2s, ~4s, ~8s then stable at ~8s, ~8s...
 
 ## Installation
 
@@ -42,7 +43,6 @@ Return a new RabbitmqPubSub pubsub client.
  * `logName` : Log name for Bunyan = (default : `RabbitmqRPC`)
  * `exchangeName` : Exchange name for handle RPC request  (default : `RabbitmqRPC`)
  * `log` : Custom log instance (require to implement function trace, debug, info, warn and error)
- * `reconnectDelay` : Reconnection delay in ms after connection close (default `1000`)
  * `subscribeQueueName` : The name for the subscribeQueue, by default it's generated
 
 ### {client} publish(channelName, data)
