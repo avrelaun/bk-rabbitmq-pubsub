@@ -68,44 +68,6 @@ test('test connection', async (t) => {
 	}
 });
 
-test('test failed connection with bad params', async (t) => {
-	try {
-		const opts = {
-			log: bunyan.createLogger({ name: 'testConnection' }),
-			exchangeName: 'RabbitmqPubSub',
-			url: 'amqp://guest:guest@RabbitmqRPC:5672/',
-			autoCreateExchange: false,
-			autoReconnect: false
-		};
-		const conn = new Connection(opts);
-
-		await t.throws(conn.getConnection());
-
-		t.pass();
-	} catch (err) {
-		t.fail(err);
-	}
-});
-
-test('test failed getChannel with bad params', async (t) => {
-	try {
-		const opts = {
-			log: bunyan.createLogger({ name: 'testConnection' }),
-			exchangeName: 'RabbitmqPubSub',
-			url: 'amqp://guest:guest@RabbitmqRPC:5672/',
-			autoCreateExchange: false,
-			autoReconnect: false
-		};
-		const conn = new Connection(opts);
-
-		await t.throws(conn.getChannel());
-
-		t.pass();
-	} catch (err) {
-		t.fail(err);
-	}
-});
-
 test('test createExchange', async (t) => {
 	try {
 		const opts = {
@@ -117,25 +79,6 @@ test('test createExchange', async (t) => {
 		await conn.createExchange();
 		// test twice to control not create type twice
 		await conn.createExchange();
-		t.pass();
-	} catch (err) {
-		t.fail(err);
-	}
-});
-
-test('test failed createExchange with bad params', async (t) => {
-	try {
-		const opts = {
-			log: bunyan.createLogger({ name: 'testConnection' }),
-			exchangeName: 'RabbitmqPubSub',
-			url: 'amqp://guest:guest@RabbitmqRPC:5672/',
-			autoCreateExchange: false,
-			autoReconnect: false
-		};
-		const conn = new Connection(opts);
-
-		await t.throws(conn.createExchange());
-
 		t.pass();
 	} catch (err) {
 		t.fail(err);
