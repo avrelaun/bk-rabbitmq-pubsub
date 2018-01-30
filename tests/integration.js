@@ -18,20 +18,20 @@ test.cb('test integration', (t) => {
 
 	try {
 		const channel = 'testChannel1';
-		client.subscribe(channel, (data) => {
-			if (data === 1){
-				t.pass();
-			} else {
-				t.fail('bad result');
-			}
-			t.end();
-		})
-		// when subscibre is ready;
-		.then(() => {
-			client.publish(channel, 1);
-		});
-
-	} catch (err){
+		client
+			.subscribe(channel, (data) => {
+				if (data === 1) {
+					t.pass();
+				} else {
+					t.fail('bad result');
+				}
+				t.end();
+			})
+			// when subscibre is ready;
+			.then(() => {
+				client.publish(channel, 1);
+			});
+	} catch (err) {
 		t.fail(err);
 	}
 });
@@ -45,24 +45,23 @@ test.cb('test integration with publish before and after', (t) => {
 		// First publish with nobody listen
 		client.publish(channel, 2);
 
-		client.subscribe(channel, (data) => {
-			if (data === 1){
-				t.pass();
-			} else {
-				t.fail('bad result');
-			}
-			t.end();
-		})
-		// when subscibre is ready;
-		.then(() => {
-			client.publish(channel, 1);
-		});
-
-	} catch (err){
+		client
+			.subscribe(channel, (data) => {
+				if (data === 1) {
+					t.pass();
+				} else {
+					t.fail('bad result');
+				}
+				t.end();
+			})
+			// when subscibre is ready;
+			.then(() => {
+				client.publish(channel, 1);
+			});
+	} catch (err) {
 		t.fail(err);
 	}
 });
-
 
 test.cb('test integration with 2 subscribe', (t) => {
 	t.plan(2);
@@ -74,27 +73,27 @@ test.cb('test integration with 2 subscribe', (t) => {
 		client.publish(channel, 2);
 
 		client.subscribe(channel, (data) => {
-			if (data === 1){
+			if (data === 1) {
 				t.pass();
 			} else {
 				t.fail('bad result');
 			}
 		});
 
-		client.subscribe(channel, (data) => {
-			if (data === 1){
-				t.pass();
-			} else {
-				t.fail('bad result');
-			}
-			t.end();
-		})
-		// when subscibre is ready;
-		.then(() => {
-			client.publish(channel, 1);
-		});
-
-	} catch (err){
+		client
+			.subscribe(channel, (data) => {
+				if (data === 1) {
+					t.pass();
+				} else {
+					t.fail('bad result');
+				}
+				t.end();
+			})
+			// when subscibre is ready;
+			.then(() => {
+				client.publish(channel, 1);
+			});
+	} catch (err) {
 		t.fail(err);
 	}
 });

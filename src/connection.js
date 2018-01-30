@@ -1,125 +1,142 @@
 const amqp = require('amqplib');
+const backoff = require('backoff');
 const EventEmitter = require('events');
 
 class Connection extends EventEmitter {
-	constructor (opts){
+	constructor (opts) {
 		super();
-		const {
-			url = 'amqp://guest:guest@localhost:5672/',
-			log,
-			exchangeName,
-			autoCreateExchange = true,
-			autoReconnect = true,
-			reconnectDelay = 1000
-		} = opts || {};
+		const { url = 'amqp://guest:guest@localhost:5672/', log, exchangeName, autoCreateExchange = true } =
+			opts || {};
 
-		if (!log){
+		if (!log) {
 			throw new Error('need to define log');
 		}
 
-		if (!exchangeName){
+		if (!exchangeName) {
 			throw new Error('need to define exchangeName');
 		}
-		this.reconnectDelay = reconnectDelay;
-		this.autoReconnect = autoReconnect;
 		this.exchangeName = exchangeName;
 		this.log = log;
 		this.url = url;
 
-		if (autoCreateExchange){
+		if (autoCreateExchange) {
 			this.createExchange();
 		}
-
 	}
 
-	reconnect (){
-		this.log.info('try to reconnect');
-		this.connectionPromise = this.connection();
-	}
+	_connection () {
+		return new Promise((resolve) => {
+			let boff = backoff.exponential({
+				randomisationFactor: 0.2,
+				initialDelay: 1000,
+				maxDelay: 8000
+			});
 
-	connection (){
-		if (this.autoReconnect){
-			this.on('close', this.reconnect);
-		}
-		return new Promise((resolve, reject) => {
-			amqp.connect(this.url).then((connection) => {
-
-				connection.on('close', () => {
-					this.log.info('Connection close');
-					this.emit('close');
-				});
-				connection.on('error', (err) => {
-					this.log.error(err);
-					this.emit('error', err);
-				});
-				this.log.info('Connected to '+this.url);
-				return resolve(connection);
-			})
-			.catch((err) => {
-				this.log.error(err);
-				if (this.autoReconnect){
-					return setTimeout(() => {
-						return resolve(Promise.resolve(this.connection()));
-					}, this.reconnectDelay);
-				} else {
-					return reject(err);
+			boff.on('backoff', (number, delay) => {
+				this.log.info(`BK-PUBSUB - Connection trial #${number} : waiting for ${delay} ms...'`);
+				if (number === 10) {
+					this.log.warn('BK-PUBSUB - WARNING: 10 CONNECTION RETRIES');
+				} else if (number === 100) {
+					this.log.warn('BK-PUBSUB - WARNING: 100 CONNECTION RETRIES');
 				}
 			});
+
+			boff.on('ready', (number) => {
+				this.log.info(`BK-PUBSUB - Connection trial #${number}; connecting...`);
+				amqp
+					.connect(this.url)
+					.then((connection) => {
+						connection.on('close', () => {
+							this.connectionPromise = null;
+							this.getSubscribeChannelPromise = null;
+							this.log.info('BK-PUBSUB - Connection closed');
+							this.emit('close');
+						});
+						connection.on('error', (err) => {
+							this.log.error(`BK-PUBSUB - Connection error: ${err}`);
+							this.emit('error', err);
+						});
+						this.log.info(`BK-PUBSUB - Connection trial #${number}; connected to ${this.url}`);
+						boff.reset();
+						return resolve(connection);
+					})
+					.catch((err) => {
+						this.log.error(`BK-PUBSUB - Connection trial #${number}; failed: ${err}`);
+						boff.backoff();
+					});
+			});
+
+			boff.backoff();
 		});
 	}
 
-	getConnection (){
-		if (this.connectionPromise){
-			return this.connectionPromise;
-		} else {
-			this.log.info('Connection to '+this.url);
-			this.connectionPromise = this.connection();
+	getConnection () {
+		if (this.connectionPromise) {
 			return this.connectionPromise;
 		}
+
+		this.log.info(`BK-PUBSUB - Get connection to ${this.url}`);
+		this.connectionPromise = this._connection();
+		return this.connectionPromise;
 	}
 
-	getChannel () {
+	newChannel () {
 		return new Promise((resolve, reject) => {
 			this.getConnection()
-			.then((conn) => {
-				conn.createChannel()
-				.then((channel) => {
-					return resolve(channel);
-				});
-			})
-			.catch((err) => {
-				return reject(err);
-			});
-		});
-	}
-
-	createExchange (){
-		if (this.createExchangePromise){
-			return this.createExchangePromise;
-		} else {
-			this.createExchangePromise = new Promise((resolve, reject) => {
-				this.getChannel()
-				.then((channel) => {
-					this.log.info('Try to create exchange '+this.exchangeName);
-					channel.assertExchange(this.exchangeName, 'topic', {
-						durable: true,
-						autoDelete: false
-					})
-					.then(() => {
-						this.log.info('Successfuly create exchange '+this.exchangeName);
-						channel.close();
-						return resolve();
+				.then((conn) => {
+					conn.createChannel().then((channel) => {
+						return resolve(channel);
 					});
 				})
 				.catch((err) => {
 					return reject(err);
 				});
+		});
+	}
+
+	getSubscribeChannel () {
+		if (this.getSubscribeChannelPromise) {
+			return this.getSubscribeChannelPromise;
+		}
+
+		this.getSubscribeChannelPromise = this.newChannel((channel) => {
+			channel.on('error', (err) => {
+				this.log.error(`BK-PUBSUB - Subcribe channel error: ${err}`);
+				this.getSubscribeChannelPromise = null;
+			});
+
+			return channel;
+		});
+
+		return this.getSubscribeChannelPromise;
+	}
+
+	createExchange () {
+		if (this.createExchangePromise) {
+			return this.createExchangePromise;
+		} else {
+			this.createExchangePromise = new Promise((resolve, reject) => {
+				this.newChannel()
+					.then((channel) => {
+						this.log.info('BK-PUBSUB - Try to create exchange ' + this.exchangeName);
+						channel
+							.assertExchange(this.exchangeName, 'topic', {
+								durable: true,
+								autoDelete: false
+							})
+							.then(() => {
+								this.log.info('BK-PUBSUB - Successfuly create exchange ' + this.exchangeName);
+								channel.close();
+								return resolve();
+							});
+					})
+					.catch((err) => {
+						return reject(err);
+					});
 			});
 			return this.createExchangePromise;
 		}
 	}
-
 }
-
 
 module.exports = Connection;
