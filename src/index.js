@@ -191,8 +191,7 @@ class RabbitmqPubSub {
 	}
 
 	closeConnection () {
-		this._log.info('closing connection...');
-		this._log.info('this conn', this._connection);
+		this._log.info('closing pubsub connection...');
 		this._connection.close();
 	}
 }
