@@ -136,6 +136,20 @@ class Connection extends EventEmitter {
 		});
 		return this.createExchangePromise;
 	}
+
+	close () {
+		return new Promise((resolve, reject) => {
+			this.getConnection()
+				.then((conn) => {
+					conn.close().then(() => {
+						return resolve();
+					});
+				})
+				.catch((err) => {
+					return reject(err);
+				});
+		});
+	}
 }
 
 module.exports = Connection;
