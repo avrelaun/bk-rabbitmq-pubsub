@@ -48,44 +48,43 @@ class RabbitmqPubSub {
 	_createSubscribeQueueAndConsume () {
 		if (this.createSubscribeQueuePromise) {
 			return this.createSubscribeQueuePromise;
-		} else {
-			this.createSubscribeQueuePromise = new Promise((resolve, reject) => {
-				this._connection
-					.newChannel()
-					.then((channel) => {
-						return channel
-							.assertQueue(this.subscribeQueueName, {
-								exclusive: true,
-								durable: false
-							})
-							.then(({ queue }) => {
-								return channel
-									.bindQueue(queue, this._connection.exchangeName, 'default-pubsub')
-									.then(() => {
-										channel
-											.consume(
-												queue,
-												(message) => {
-													const channelName = message.fields.routingKey;
-													const data = JSON.parse(message.content.toString());
-													this._events.emit(channelName, data);
-												},
-												{
-													noAck: true
-												}
-											)
-											.then(() => {
-												return resolve();
-											});
-									});
-							});
-					})
-					.catch((err) => {
-						return reject(err);
-					});
-			});
-			return this.createSubscribeQueuePromise;
 		}
+		this.createSubscribeQueuePromise = new Promise((resolve, reject) => {
+			this._connection
+				.newChannel()
+				.then((channel) => {
+					return channel
+						.assertQueue(this.subscribeQueueName, {
+							exclusive: true,
+							durable: false
+						})
+						.then(({ queue }) => {
+							return channel
+								.bindQueue(queue, this._connection.exchangeName, 'default-pubsub')
+								.then(() => {
+									channel
+										.consume(
+											queue,
+											(message) => {
+												const channelName = message.fields.routingKey;
+												const data = JSON.parse(message.content.toString());
+												this._events.emit(channelName, data);
+											},
+											{
+												noAck: true
+											}
+										)
+										.then(() => {
+											return resolve();
+										});
+								});
+						});
+				})
+				.catch((err) => {
+					return reject(err);
+				});
+		});
+		return this.createSubscribeQueuePromise;
 	}
 
 	_genSubscriptionId () {

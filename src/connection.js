@@ -114,28 +114,27 @@ class Connection extends EventEmitter {
 	createExchange () {
 		if (this.createExchangePromise) {
 			return this.createExchangePromise;
-		} else {
-			this.createExchangePromise = new Promise((resolve, reject) => {
-				this.newChannel()
-					.then((channel) => {
-						this.log.info('BK-PUBSUB - Try to create exchange ' + this.exchangeName);
-						channel
-							.assertExchange(this.exchangeName, 'topic', {
-								durable: true,
-								autoDelete: false
-							})
-							.then(() => {
-								this.log.info('BK-PUBSUB - Successfuly create exchange ' + this.exchangeName);
-								channel.close();
-								return resolve();
-							});
-					})
-					.catch((err) => {
-						return reject(err);
-					});
-			});
-			return this.createExchangePromise;
 		}
+		this.createExchangePromise = new Promise((resolve, reject) => {
+			this.newChannel()
+				.then((channel) => {
+					this.log.info('BK-PUBSUB - Try to create exchange ' + this.exchangeName);
+					channel
+						.assertExchange(this.exchangeName, 'topic', {
+							durable: true,
+							autoDelete: false
+						})
+						.then(() => {
+							this.log.info('BK-PUBSUB - Successfuly create exchange ' + this.exchangeName);
+							channel.close();
+							return resolve();
+						});
+				})
+				.catch((err) => {
+					return reject(err);
+				});
+		});
+		return this.createExchangePromise;
 	}
 }
 
